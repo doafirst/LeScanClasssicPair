@@ -20,17 +20,23 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
+import android.bluetooth.le.AdvertiseCallback;
+import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
+import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.AdvertisingSetParameters;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -121,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
         startScanningButton.setOnClickListener(view -> startScanning());
         stopScanningButton.setOnClickListener(view -> stopScanning());
         initializeBluetooth();
-
+        customize_advertising();
         deviceListView.setOnItemClickListener((adapterView, view, position, id) -> {
             /*
             stopScanning();
@@ -138,6 +144,44 @@ public class MainActivity extends AppCompatActivity {
             promptEnableBluetooth();
         }
     }
+
+    private void customize_advertising(){
+        BluetoothLeAdvertiser bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
+        UUID adv_uuid = UUID.fromString( "00001101-0000-1000-8000-00805f9b34fb");
+        byte[] data = {0x12, 0x34, 0x56, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65};
+        if(bluetoothLeAdvertiser == null)
+        {
+            Log.e(TAG,"Adv create fail\n");
+            return;
+        }
+        AdvertiseSettings advSettings = new AdvertiseSettings.Builder()
+                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+                .setConnectable(false)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
+                .build();
+
+        AdvertiseData advData = new AdvertiseData.Builder()
+                .setIncludeDeviceName(true)
+                .setIncludeTxPowerLevel(false)
+                .addServiceUuid(new ParcelUuid(adv_uuid))
+                .addServiceData(new ParcelUuid(adv_uuid),data)
+                .build();
+        bluetoothLeAdvertiser.startAdvertising(advSettings,advData,advertiseCallback);
+
+    }
+
+    AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
+        @Override
+        public void onStartFailure(int errorCode) {
+            super.onStartFailure(errorCode);
+            Log.d(TAG, "Advertising failed");
+        }
+        @Override
+        public void onStartSuccess(AdvertiseSettings settingsInEffect) {
+            super.onStartSuccess(settingsInEffect);
+            Log.d(TAG, "Advertising successfully started");
+        }
+    };
 
     @SuppressLint("MissingPermission")
     private void promptEnableBluetooth() {
