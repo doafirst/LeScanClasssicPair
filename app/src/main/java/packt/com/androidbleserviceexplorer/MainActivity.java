@@ -30,6 +30,7 @@ import android.bluetooth.le.ScanSettings;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.AdvertisingSetParameters;
+import android.bluetooth.le.AdvertisingSetCallback;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -147,13 +148,40 @@ public class MainActivity extends AppCompatActivity {
 
     private void customize_advertising(){
         BluetoothLeAdvertiser bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
-        UUID adv_uuid = UUID.fromString( "00001101-0000-1000-8000-00805f9b34fb");
-        byte[] data = {0x12, 0x34, 0x56, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65};
-        if(bluetoothLeAdvertiser == null)
-        {
-            Log.e(TAG,"Adv create fail\n");
+        UUID adv_uuid = UUID.randomUUID();
+        byte[] data = {0x11,-0x01,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
+        };
+        if (bluetoothLeAdvertiser == null) {
+            Log.e(TAG, "Adv create fail\n");
             return;
         }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            Log.i(TAG, "Android API ok " + android.os.Build.VERSION.SDK_INT);
+        } else {
+            Log.e(TAG, "Android API too old " + android.os.Build.VERSION.SDK_INT);
+            return;
+        }
+
+        Log.i(TAG,"Max advertising data len: " + bluetoothAdapter.getLeMaximumAdvertisingDataLength());
+        Log.i(TAG,"UUID: " + adv_uuid.toString());
+
+        AdvertisingSetParameters advPara = new AdvertisingSetParameters.Builder()
+                .setLegacyMode(false)
+                //.setPrimaryPhy(BluetoothDevice.PHY_LE_1M)
+                .setConnectable(true)
+                .build();
+
         AdvertiseSettings advSettings = new AdvertiseSettings.Builder()
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                 .setConnectable(false)
@@ -163,13 +191,15 @@ public class MainActivity extends AppCompatActivity {
         AdvertiseData advData = new AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
                 .setIncludeTxPowerLevel(false)
-                .addServiceUuid(new ParcelUuid(adv_uuid))
                 .addServiceData(new ParcelUuid(adv_uuid),data)
                 .build();
-        bluetoothLeAdvertiser.startAdvertising(advSettings,advData,advertiseCallback);
 
+        bluetoothLeAdvertiser.startAdvertisingSet(advPara,advData,null,null,null,advertisingSetCallback);
+        //bluetoothLeAdvertiser.startAdvertising(advSettings,advData,advertiseCallback);
     }
+    AdvertisingSetCallback  advertisingSetCallback = new AdvertisingSetCallback (){
 
+    };
     AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
         @Override
         public void onStartFailure(int errorCode) {
